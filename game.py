@@ -2,16 +2,6 @@ import pygame
 import sys
 import os
 
-pygame.init()
-size = WIDTH, HEIGHT = 500, 500
-screen = pygame.display.set_mode(size)
-clock = pygame.time.Clock()
-FPS = 50
-player_group = pygame.sprite.Group()
-tiles_group = pygame.sprite.Group()
-walls_group = pygame.sprite.Group()
-all_sprites = pygame.sprite.Group()
-
 
 def load_level(filename):
     filename = "data/" + filename
@@ -24,6 +14,22 @@ def load_level(filename):
 
     # дополняем каждую строку пустыми клетками ('.')
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+
+
+try:
+    level = load_level(input())
+except FileNotFoundError:
+    print("Файл не существует.")
+    exit()
+pygame.init()
+size = WIDTH, HEIGHT = 500, 500
+screen = pygame.display.set_mode(size)
+clock = pygame.time.Clock()
+FPS = 50
+player_group = pygame.sprite.Group()
+tiles_group = pygame.sprite.Group()
+walls_group = pygame.sprite.Group()
+all_sprites = pygame.sprite.Group()
 
 
 def load_image(name, colorkey=None):
@@ -129,7 +135,7 @@ def generate_level(level):
     return new_player, x, y
 
 
-player, level_x, level_y = generate_level(load_level('level.txt'))
+player, level_x, level_y = generate_level(level)
 while True:
     vx = 0
     vy = 0
