@@ -87,6 +87,25 @@ player_image = load_image('mario.png')
 tile_width = tile_height = 50
 
 
+class Camera:
+    # зададим начальный сдвиг камеры
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    # сдвинуть объект obj на смещение камеры
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    # позиционировать камеру на объекте target
+    def update(self, target):
+        self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
+        self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
+        if target.rect.x != 238:
+            print(target.rect.x)
+
+
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
 
@@ -118,6 +137,7 @@ class Player(pygame.sprite.Sprite):
             self.y -= vy
             self.rect = self.image.get_rect().move(
                 tile_width * self.x + 15, tile_height * self.y + 5)
+        print(self.rect.x)
 
 
 def generate_level(level):
@@ -135,22 +155,32 @@ def generate_level(level):
     return new_player, x, y
 
 
+all_sprites.draw(screen)
+player_group.draw(screen)
 player, level_x, level_y = generate_level(level)
+camera = Camera()
+
 while True:
-    vx = 0
-    vy = 0
+    camera.update(player)
+    for sprite in all_sprites:
+        camera.apply(sprite)
     for event in pygame.event.get():
+        vx = 0
+        vy = 0
         if event.type == pygame.QUIT:
             terminate()
         if pygame.key.get_pressed()[pygame.K_LEFT]:
             vx = -1
-        if pygame.key.get_pressed()[pygame.K_RIGHT]:
+        elif pygame.key.get_pressed()[pygame.K_RIGHT]:
             vx = 1
-        if pygame.key.get_pressed()[pygame.K_UP]:
+        elif pygame.key.get_pressed()[pygame.K_UP]:
             vy = -1
-        if pygame.key.get_pressed()[pygame.K_DOWN]:
+        elif pygame.key.get_pressed()[pygame.K_DOWN]:
             vy = 1
+        else:
+            continue
         player.move(vx, vy)
+    screen.fill((0, 0, 0))
     all_sprites.draw(screen)
     player_group.draw(screen)
     pygame.display.flip()
