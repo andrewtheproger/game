@@ -17,12 +17,12 @@ def load_level(filename):
 
 
 try:
-    level = load_level(input())
+    level = load_level(input("Введите имя уровня: "))
 except FileNotFoundError:
     print("Файл не существует.")
     exit()
 pygame.init()
-size = WIDTH, HEIGHT = 500, 500
+size = WIDTH, HEIGHT = 550, 550
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 FPS = 50
@@ -95,15 +95,13 @@ class Camera:
 
     # сдвинуть объект obj на смещение камеры
     def apply(self, obj):
-        obj.rect.x += self.dx
-        obj.rect.y += self.dy
+        obj.rect.x = obj.x + self.dx
+        obj.rect.y = obj.y + self.dy
 
     # позиционировать камеру на объекте target
     def update(self, target):
-        self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
-        self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
-        if target.rect.x != 238:
-            print(target.rect.x)
+        self.dx = 0
+        self.dy = 0
 
 
 class Tile(pygame.sprite.Sprite):
@@ -113,9 +111,10 @@ class Tile(pygame.sprite.Sprite):
         if tile_type == "wall":
             self.add(walls_group)
         self.image = tile_images[tile_type]
-
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
+        self.x = self.rect.x
+        self.y = self.rect.y
 
 
 class Player(pygame.sprite.Sprite):
@@ -130,14 +129,23 @@ class Player(pygame.sprite.Sprite):
     def move(self, vx, vy):
         self.x += vx
         self.y += vy
-        self.rect = self.image.get_rect().move(
-            tile_width * self.x + 15, tile_height * self.y + 5)
+        #self.rect = self.image.get_rect().move(
+        #    tile_width * self.x + 15, tile_height * self.y + 5)
+        camera.dx -= tile_width * vx
+        camera.dy -= tile_height * vy
+        for sprite in tiles_group:
+            camera.apply(sprite)
         if pygame.sprite.spritecollideany(self, walls_group):
             self.x -= vx
             self.y -= vy
-            self.rect = self.image.get_rect().move(
-                tile_width * self.x + 15, tile_height * self.y + 5)
-        print(self.rect.x)
+            camera.dx += tile_width * vx
+            camera.dy += tile_height * vy
+            for sprite in tiles_group:
+                camera.apply(sprite)
+
+
+lev = [[0] * 11] * 11
+print(lev)
 
 
 def generate_level(level):
@@ -145,25 +153,23 @@ def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
-                Tile('empty', x, y)
+                lev[y][x] = Tile('empty', x, y)
             elif level[y][x] == '#':
-                Tile('wall', x, y)
+                lev[y][x] = Tile('wall', x, y)
             elif level[y][x] == '@':
-                Tile('empty', x, y)
+                lev[y][x] = Tile('empty', x, y)
                 new_player = Player(x, y)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
+print(lev)
 
-
-all_sprites.draw(screen)
-player_group.draw(screen)
 player, level_x, level_y = generate_level(level)
 camera = Camera()
 
 while True:
-    camera.update(player)
-    for sprite in all_sprites:
-        camera.apply(sprite)
+    # camera.update(player)
+    # for sprite in all_sprites:
+    #     camera.apply(sprite)
     for event in pygame.event.get():
         vx = 0
         vy = 0
@@ -181,7 +187,7 @@ while True:
             continue
         player.move(vx, vy)
     screen.fill((0, 0, 0))
-    all_sprites.draw(screen)
+    tiles_group.draw(screen)
     player_group.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
